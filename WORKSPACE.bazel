@@ -1,0 +1,80 @@
+workspace(name = "github_com_fardream_bindscs")
+
+new_local_repository(
+    name = "intel_mkl",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "intel_mkl",
+    srcs = [
+        "lib/intel64/libmkl_core.a",
+        "lib/intel64/libmkl_intel_lp64.a",
+        "lib/intel64/libmkl_sequential.a",
+    ],
+    hdrs = glob(["include/*.h"]),
+    linkopts = ["-Wl,--start-group /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_intel_lp64.a /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_sequential.a /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl"],
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "intel_mkl_gnu_openmp",
+    srcs = [
+        "lib/intel64/libmkl_core.a",
+        "lib/intel64/libmkl_gnu_thread.a",
+        "lib/intel64/libmkl_intel_lp64.a",
+    ],
+    hdrs = glob(["include/*.h"]),
+    linkopts = ["-Wl,--start-group /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_intel_lp64.a /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_gnu_thread.a /opt/intel/oneapi/mkl/2023.0.0/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp -lpthread -lm -ldl"],
+    strip_include_prefix = "include",
+)
+""",
+    path = "/opt/intel/oneapi/mkl/2023.0.0",
+)
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "cvxgrp_com_scs",
+    commit = "000a93fadc05dd296361285e42019d80e95471ba",
+    remote = "https://github.com/fardream/scs.git",
+    shallow_since = "1675994630 +0000",
+)
+
+## http archive is required
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+################################################################################################################################
+## rules go
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "56d8c5a5c91e1af73eca71a6fab2ced959b67c86d12ba37feedb0a2dfea441a6",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.37.0/rules_go-v0.37.0.zip",
+    ],
+)
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+
+go_register_toolchains(version = "1.19.5")
+
+# To find additional information on this release or newer ones visit:
+# https://github.com/bazelbuild/rules_rust/releases
+http_archive(
+    name = "rules_rust",
+    sha256 = "2466e5b2514772e84f9009010797b9cd4b51c1e6445bbd5b5e24848d90e6fb2e",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.18.0/rules_rust-v0.18.0.tar.gz"],
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2021",
+    versions = [
+        "1.66.1",
+    ],
+)
